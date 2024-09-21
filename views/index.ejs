@@ -1,0 +1,82 @@
+<html lang='en'>
+<%- include('./partials/head.ejs') %>
+
+    <body>
+        <%- include('./partials/nav.ejs') %>
+
+            <div class="blogs content">
+                <h2>All Blogs</h2>
+
+                <!-- Server-side rendering of blogs -->
+                <% if (Array.isArray(blogs) && blogs.length > 0) { %>
+                    <% blogs.forEach(blog => { %>
+                        <a class="single" href="/blogs/<%= blog._id %>">
+                            <h3 class="title">
+                                <%= blog.title %>
+                            </h3>
+                            <p class="snippet">
+                                <%= blog.snippet %>
+                            </p>
+                        </a>
+                        <% }); %>
+                            <% } else { %>
+                                <p>No blogs available.</p>
+                                <% } %>
+            </div>
+
+            <%- include('./partials/footer.ejs') %>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', async() => {
+                        const token = localStorage.getItem('token');
+                        console.log('Token from localStorage:', token);
+
+                        // Redirect to login page if token is not present
+                        if (!token) {
+                            window.location.href = '/login';
+                            return;
+                        }
+
+                        try {
+                            // Fetch blogs with the token included in headers
+                            const response = await fetch('/blogs', {
+                                method: 'GET',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`, // Only checking for token presence
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            if (response.ok) {
+                                const blogs = await response.json();
+                                console.log('Blogs:', blogs);
+
+                                // Dynamically update the DOM with the fetched blogs
+                                const blogContainer = document.querySelector('.blogs.content');
+                                blogContainer.innerHTML = '<h2>All Blogs</h2>'; // Clear previous content
+
+                                if (Array.isArray(blogs) && blogs.length > 0) {
+                                    blogs.forEach(blog => {
+                                        const blogElement = document.createElement('a');
+                                        blogElement.classList.add('single');
+                                        blogElement.href = `/blogs/${blog._id}`;
+                                        blogElement.innerHTML = `
+                                <h3 class="title">${blog.title}</h3>
+                                <p class="snippet">${blog.snippet}</p>
+                            `;
+                                        blogContainer.appendChild(blogElement);
+                                    });
+                                } else {
+                                    blogContainer.innerHTML += '<p>No blogs available.</p>';
+                                }
+                            } else {
+                                console.error('Failed to fetch blogs:', response.status);
+                            }
+                        } catch (error) {
+                            console.error('Error fetching blogs:', error);
+                        }
+                    });
+                </script>
+    </body>
+
+</html>
